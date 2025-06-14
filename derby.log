@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Sun Jun 15 02:02:00 NZST 2025:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.14.2.0 - (1828579): instance a816c00e-0197-6ebf-4e91-00001e584400 
+on database directory C:\Users\blake\OneDrive - AUT University\2025 S1 Classes\COMP603 Program Design and Construction\Assignment 1\BlackjackProgram\databases\EmbeddedBlackjackDB with class loader jdk.internal.loader.ClassLoaders$AppClassLoader@6f496d9f 
+Loaded from file:/C:/Users/blake/OneDrive%20-%20AUT%20University/2025%20S1%20Classes/COMP603%20Program%20Design%20and%20Construction/db-derby-10.14.2.0-lib/db-derby-10.14.2.0-lib/lib/derby.jar
+java.vendor=Oracle Corporation
+java.runtime.version=21.0.2+13-58
+user.dir=C:\Users\blake\OneDrive - AUT University\2025 S1 Classes\COMP603 Program Design and Construction\Assignment 1\BlackjackProgram
+os.name=Windows 11
+os.arch=amd64
+os.version=10.0
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

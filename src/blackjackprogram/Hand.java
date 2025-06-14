@@ -5,13 +5,14 @@
 package blackjackprogram;
 
 import java.util.Random;
+import blackjackprogram.Card.Rank;
 
 
 /**
  *
  * @author blake
  */
-public class Hand {
+public abstract class Hand implements Participant{
     Card[] cards = new Card[12]; // 11 is the most cards one could have without busting, we reserve a space if they want to hit.
     boolean busted = false;
     
@@ -39,44 +40,25 @@ public class Hand {
     }
     
     // ------ Compare Hands ------ //
+    @Override
     public int value(){
         int points = 0;
         int aceSum = 0;
         for(int i=0; i<this.cards.length; i++) {
             if(this.cards[i]!=null){
-                Card.Rank rank = this.cards[i].rank;
+                Rank rank = this.cards[i].rank;
                 switch(rank){
-                    case Card.Rank.Ace:
-                        // Because aces can equal 1 or 11, we track how many aces are in the hand and add them to the points later.
-                        aceSum+=1;
-                        break;
-                    case Card.Rank.Two:
-                        points+=2;
-                        break;
-                    case Card.Rank.Three:
-                        points+=3;
-                        break;
-                    case Card.Rank.Four:
-                        points+=4;
-                        break;
-                    case Card.Rank.Five:
-                        points+=5;
-                        break;
-                    case Card.Rank.Six:
-                        points+=6;
-                        break;
-                    case Card.Rank.Seven:
-                        points+=7;
-                        break;
-                    case Card.Rank.Eight:
-                        points+=8;
-                        break;
-                    case Card.Rank.Nine:
-                        points+=9;
-                        break;
-                    default:
-                        points+=10;
-                        break;
+                    // Because aces can equal 1 or 11, we track how many aces are in the hand and add them to the points later.
+                    case Ace: aceSum+=1; break;
+                    case Two:points+=2; break;
+                    case Three: points+=3; break;
+                    case Four: points+=4; break;
+                    case Five: points+=5; break;
+                    case Six: points+=6; break;
+                    case Seven: points+=7; break;
+                    case Eight: points+=8; break;
+                    case Nine: points+=9; break;
+                    default: points+=10; break;
                 }
             }
         }
@@ -96,6 +78,7 @@ public class Hand {
     
     // ------ Decision Functions ------ //
     // Hit
+    @Override
     public void hit(Card[] otherHandsCards){
         for(int i=1; i<this.cards.length; i++){ // We start at i=1 because the hand constuctor method initializes one card in the hand.
             if(this.cards[i]==null){
@@ -110,22 +93,9 @@ public class Hand {
         }
     }
     
-    // Stand
-    public void stand(Hand dealerHand){
-        // Dealer will draw until 17, as per Blackjack rules.
-        // By now, the most the dealer can have is 11, so they will need to draw at least once, this accounts for the hidden card.
-        while(dealerHand.value()<17){
-            dealerHand.hit(this.cards);
-        }
-        // Print the full dealer hand so player can look.
-        System.out.println("Dealer's hand: "+dealerHand);
-        // Print dealer's hand's value.
-        if(dealerHand.busted){
-            System.out.println("Dealer has busted with "+dealerHand.value()+".");
-        }
-        else{
-            System.out.println("Dealer's hand's value: "+dealerHand.value());
-        }
+    @Override
+    public boolean isBust(){
+        return this.busted;
     }
     
     // ------ Random Card Functions ------ //

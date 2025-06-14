@@ -53,7 +53,7 @@ public class BetManager {
             payout = currentBet * 2;
         }
         playerMoney += payout;
-        System.out.println("Remaining Funds: " + playerMoney+".");
+        System.out.println("Remaining Funds: $" + playerMoney+".");
         currentBet = 0;
         storage.saveMoney(playerMoney);
     }
@@ -61,7 +61,7 @@ public class BetManager {
     // Set bet to 0 and print player's remaining money.
     public void lose(){
         currentBet = 0;
-        System.out.println("Remaining Funds: " + playerMoney+".");
+        System.out.println("Remaining Funds: $" + playerMoney+".");
         storage.saveMoney(playerMoney);
     }
     
