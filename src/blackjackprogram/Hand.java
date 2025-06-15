@@ -4,7 +4,6 @@
  */
 package blackjackprogram;
 
-import java.util.Random;
 import blackjackprogram.Card.Rank;
 
 
@@ -15,11 +14,12 @@ import blackjackprogram.Card.Rank;
 public abstract class Hand implements Participant{
     Card[] cards = new Card[12]; // 11 is the most cards one could have without busting, we reserve a space if they want to hit.
     boolean busted = false;
+    protected Deck deck;
     
     // Constructor Method
-    public Hand(Card[] otherHandsCards) {
-        Card card = randomCard(otherHandsCards);
-        cards[0] = card; 
+    public Hand(Deck deck) {
+        this.deck = deck;
+        cards[0] = deck.drawCard(); 
         // Because the dealer has a hidden card, we do not generate cards[1] automatically.
         // Instead, for playerHand, we immediatley hit after creating the hand, which populates card[1].
     }
@@ -79,11 +79,11 @@ public abstract class Hand implements Participant{
     // ------ Decision Functions ------ //
     // Hit
     @Override
-    public void hit(Card[] otherHandsCards){
+    public void hit(){
         for(int i=1; i<this.cards.length; i++){ // We start at i=1 because the hand constuctor method initializes one card in the hand.
             if(this.cards[i]==null){
                 // Add a random card to the deck.
-                this.cards[i]=randomCard(otherHandsCards);
+                this.cards[i]=deck.drawCard();
                 break;
             }
         }
@@ -96,38 +96,5 @@ public abstract class Hand implements Participant{
     @Override
     public boolean isBust(){
         return this.busted;
-    }
-    
-    // ------ Random Card Functions ------ //
-    // Returns a unique random card.
-    private Card randomCard(Card[] otherHandsCards){
-        Card card = new Card(this.randomRank(), this.randomSuit());
-        // Iterate through both player and dealer's decks.
-        for(int i=0; i<this.cards.length; i++){
-            if(this.cards[i]!=null){
-                // If the card exists in this deck already, use a different random card.
-                if(card.rank==this.cards[i].rank&&card.suit==this.cards[i].suit){
-                    card=randomCard(otherHandsCards);
-                }
-            }
-            if(otherHandsCards[i]!=null){
-                // If the card exists in the other deck already, use a different random card.
-                if(card.rank==otherHandsCards[i].rank&&card.suit==otherHandsCards[i].suit){
-                    card=randomCard(otherHandsCards);
-                }
-            }
-        }
-        return card;
-    }
-    
-    Random random = new Random();
-    // Returns a random rank.
-    private Card.Rank randomRank(){
-        return Card.Rank.values()[random.nextInt(Card.Rank.values().length)];
-    }
-    
-    // Returns a random suit.
-    private Card.Suit randomSuit(){
-        return Card.Suit.values()[random.nextInt(Card.Suit.values().length)];
     }
 }

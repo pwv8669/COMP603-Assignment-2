@@ -19,6 +19,9 @@ public class GameManager {
         // Create a scanner for CUI inputs.
         Scanner scanner = new Scanner(System.in);
 
+        // Create and shuffle deck
+        Deck deck = new Deck();
+        
         // ------ Place Bet ------ //
         System.out.println("You have $" + betManager.getPlayerMoney());
         System.out.print("Place your bet: ");
@@ -34,8 +37,8 @@ public class GameManager {
         }
 
         // ------ Setup Dealer and Player's Hands ------ //
-        Dealer dealer = new Dealer(new Card[12]);
-        Player player = new Player(dealer.cards);
+        Dealer dealer = new Dealer(deck);
+        Player player = new Player(deck);
         dealer.showFirstCard();
         System.out.println("Player's hand: "+player+" ("+player.value()+")");
 
@@ -54,7 +57,7 @@ public class GameManager {
                 switch (input) {
                     case "hit":
                         // Add a card to player's deck and check if the have busted.
-                        player.hit(dealer.cards);
+                        player.hit();
                         System.out.println("Player's hand: " + player);
                         if (player.isBust()) {
                             System.out.println("Player has busted with " + player.value() + ".");
@@ -67,7 +70,7 @@ public class GameManager {
                         if (betManager.canDoubleDown()) {
                             betManager.doubleDown();
                             // Add a card to the players deck and stand if they haven't busted.
-                            player.hit(dealer.cards);
+                            player.hit();
                             System.out.println("Player's hand: " + player);
                             if (player.isBust()) {
                                 System.out.println("Player has busted with " + player.value() + ".");
@@ -140,6 +143,7 @@ public class GameManager {
                     if (betManager.getPlayerMoney() <= 0) {
                         System.out.println("\nYou're out of money, so you withdrew $100 from your kid's college savings.");
                         moneyStorage.saveMoney(100);
+                        betManager.playerMoney = 100;
                     }
                     newGame();
                     break;

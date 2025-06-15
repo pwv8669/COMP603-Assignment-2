@@ -9,7 +9,10 @@ package blackjackprogram;
  * @author blake
  */
 public interface Participant {
-    void hit(Card[] otherHandsCards);
+    // Adds a card to the participant's card list.
+    void hit();
+    // Returns the value of the participant's hand.
     int value();
+    // Check if the participant's hand is above 21.
     boolean isBust();
 }

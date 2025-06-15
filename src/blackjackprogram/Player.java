@@ -10,14 +10,14 @@ package blackjackprogram;
  */
 public class Player extends Hand{
     
-    public Player(Card[] otherHandsCards) {
-        super(otherHandsCards);
-        this.hit(otherHandsCards);// Immediatley draw second card
+    public Player(Deck deck) {
+        super(deck);
+        this.hit();// Immediatley draw second card
     }
     
-    // Stand
+    // Print hand value and make the dealer play.
     public void stand(Dealer dealer){
         System.out.println("Player hand value: "+this.value());
-        dealer.play(cards);
+        dealer.play();
     }
 }
