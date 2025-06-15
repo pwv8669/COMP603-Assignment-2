@@ -35,4 +35,9 @@ public class Deck {
     public Card drawCard(){
         return cards.remove(0);
     }
+    
+    // Returns the amount of cards remaining in the deck.
+    public int remainingCards() {
+        return cards.size();
+    }
 }
