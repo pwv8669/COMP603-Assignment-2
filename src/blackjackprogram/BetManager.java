@@ -21,6 +21,9 @@ public class BetManager {
     
     public MoneyStorage storage;
     
+    public static final double BLACKJACK_PAYOUT = 1.5;
+    public static final int NON_BLACKJACK_PAYOUT = 2;
+    
     public BetManager(){
         storage = new MoneyStorage();
         playerMoney = storage.loadMoney();
@@ -46,11 +49,11 @@ public class BetManager {
         double payout; 
         if(isBlackJack){
             // If it is a natural blackjack, the player is only rewarded 3:2.
-            payout = currentBet * 1.5;
+            payout = currentBet * BLACKJACK_PAYOUT;
         }
         else{
             // Otherwise, player is rewarded the full 2:1.
-            payout = currentBet * 2;
+            payout = currentBet * NON_BLACKJACK_PAYOUT;
         }
         playerMoney += payout;
         System.out.println("Remaining Funds: $" + playerMoney+".");

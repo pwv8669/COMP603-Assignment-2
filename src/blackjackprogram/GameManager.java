@@ -4,152 +4,186 @@
  */
 package blackjackprogram;
 
-import java.util.Scanner;
-
 /**
  *
  * @author blake
  */
 public class GameManager {
 
-    BetManager betManager = new BetManager();
-    MoneyStorage moneyStorage = betManager.storage;
+    private BetManager betManager;
+    private MoneyStorage moneyStorage;
+    public GameState gameState;
+    public Player player;
 
-    public void newGame() {
-        // Create a scanner for CUI inputs.
-        Scanner scanner = new Scanner(System.in);
-
-        // Create and shuffle deck
-        Deck deck = new Deck();
+    public GameManager() {
+        this.betManager = new BetManager();
+        this.moneyStorage = betManager.storage;
         
-        // ------ Place Bet ------ //
-        System.out.println("You have $" + betManager.getPlayerMoney());
-        System.out.print("Place your bet: ");
-        int betAmount = 0;
-        boolean validBet = false;
-        while (!validBet) { // Force user to input an int which is at least 1.
-            try {
-                betAmount = Integer.parseInt(scanner.nextLine());
-                validBet = betManager.placeBet(betAmount);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number, you must input a whole number.");
-            }
+        // If we leaded with $0, immediatley give player 100.
+        if(betManager.getPlayerMoney()==0&&betManager.getCurrentBet()==0){
+            moneyStorage.saveMoney(100);
+            this.betManager = new BetManager();
+        }
+    }
+
+    // Returns the current betmanager.
+    public BetManager getBetManager() {
+        return this.betManager;
+    }
+
+    // Creates a new game.
+    public String newGame(int betAmount) {
+        StringBuilder output = new StringBuilder();
+
+        // If the player fails to place the bet, it will be due to insufficient funds.
+        if (!betManager.placeBet(betAmount)) {
+            return "Invalid bet. You only have $"+betManager.getPlayerMoney()+".\n";
         }
 
-        // ------ Setup Dealer and Player's Hands ------ //
+        // Deal out starting hands.
+        Deck deck = new Deck();
         Dealer dealer = new Dealer(deck);
-        Player player = new Player(deck);
-        dealer.showFirstCard();
-        System.out.println("Player's hand: "+player+" ("+player.value()+")");
+        player = new Player(deck);
 
-        String input = "";
+        // Present the visible cards to the player.
+        output.append("Bet placed: $").append(betAmount).append("\n");
+        output.append("Player's hand: ").append(player).append(" (Value: ").append(player.value()).append(")\n");
+        output.append("Dealer shows: ").append(dealer.cards[1]).append("\n");
 
-        // ------ Natural Blackjack: Stand ------ //
-        if (player.value() == 21) {
-            System.out.println("\nPlayer has a natural blackjack!");
-            player.stand(dealer);
-        } // ------ Player Inputs Their Choice ------ //
-        else {
-            System.out.print("\nWould you like to \"Hit\" or \"Stand\" or \"Double down\"?: ");
-            // Break out of while loop if player busts, or choses to either stand or double down.
-            while (!player.isBust() && !input.equals("stand")) {
-                input = scanner.nextLine().toLowerCase().trim();
-                switch (input) {
-                    case "hit":
-                        // Add a card to player's deck and check if the have busted.
-                        player.hit();
-                        System.out.println("Player's hand: " + player);
-                        if (player.isBust()) {
-                            System.out.println("Player has busted with " + player.value() + ".");
-                        } else {
-                            System.out.println("Player's hand's value: " + player.value());
-                        }
-                        break;
-                    case "double down":
-                        // Check if the player has enough money in order to double their bet.
-                        if (betManager.canDoubleDown()) {
-                            betManager.doubleDown();
-                            // Add a card to the players deck and stand if they haven't busted.
-                            player.hit();
-                            System.out.println("Player's hand: " + player);
-                            if (player.isBust()) {
-                                System.out.println("Player has busted with " + player.value() + ".");
-                            } else {
-                                System.out.println("Player's hand's value: " + player.value());
-                                // Have the dealer hit until they reach 17.
-                                player.stand(dealer);
-                            }
-                            input="stand";
-                            break;
-                        } else {
-                            System.out.println("You cannot double down as you do not have enough funds.");
-                            // Because the loop will end if input=="double down" we need to change input, they cant double down.
-                            input = "(an input that isn't double down)";
-                            break;
-                        }
+        // If there is a natural blackjack, the player will win immediatley so we muct check now.
+        if (player.value() == 21 && player.cards[2] == null) {
+            output.append("Player has a natural blackjack!\n");
+            int winnings = (int) (betManager.getCurrentBet() * betManager.BLACKJACK_PAYOUT);
+            // Betmanager uses boolean as an argument to represent whether its natural blackjack or any other win.
+            betManager.win(true); 
+            output.append("You won with a blackjack! Payout: $" + winnings + "\n");
+            output.append("Money: $" + betManager.getPlayerMoney() + "\n");
 
-                    case "stand":
-                        // Have the dealer hit until they reach 17.
-                        player.stand(dealer);
-                        break;
-                    default:
-                        // If the player inputs anything else give a message saying their input is invalid.
-                        System.out.println("Invalid input.");
-                }
-            }
+            // Signal that the round has ended.
+            gameState = null; 
+            output.append(checkAndResetMoney());
+            return output.toString();
         }
 
-        // ------ Game Outcomes ------ //
+        // Not an immediate blackjack so we muct keep track of the state of the game.
+        gameState = new GameState(deck, dealer, player);
+        return output.toString();
+    }
+
+    // Player draws a card.
+    public String hit() {
+        if (gameState == null) {
+            return "No game in progress.\n";
+        }
+
+        // If the player has already busted, then they cant draw.
+        Player player = gameState.player;
+        if (player.isBust()) {
+            return "You are already busted. Round over.\n";
+        }
+
+        // Else, draw a card.
+        player.hit();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Player hits!\n");
+        sb.append("Player's hand: ").append(player).append("\n");
+        sb.append("Hand value: ").append(player.value()).append("\n");
+
+        // If the newly drawn card has busted the player, they lose the bet and the game ends.
+        if (player.isBust()) {
+            int lostAmount = betManager.getCurrentBet(); // Quickly grab the bet value before loose() resets it.
+            betManager.lose();
+            sb.append("Player has busted!\n");
+            sb.append("You lost your bet of $").append(lostAmount).append(".\n");
+            gameState = null;
+            // Make sure that the player isnt on $0. If they are give some money so they can keep playing.
+            sb.append(checkAndResetMoney());
+        }
+        return sb.toString();
+    }
+
+    // Player stops drawing cards and dealer draws until they have at least 17.
+    public String stand() {
+        if (gameState == null) {
+            return "No game in progress.\n";
+        }
+
+        Dealer dealer = gameState.dealer;
+        Player player = gameState.player;
+        // Signal the dealer to start drawing until 17.
+        player.stand(dealer);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Dealer's hand: ").append(dealer).append("\n");
+        sb.append("Dealer's value: ").append(dealer.value()).append("\n");
+        // Get values to compare outcome.
         boolean playerBust = player.isBust();
         boolean dealerBust = dealer.isBust();
         int playerValue = player.value();
         int dealerValue = dealer.value();
-        
-        // Player loses
-        if (playerBust||(!dealerBust&&dealerValue>playerValue)) {
-            System.out.println("Player has lost.");
+        // Compare results.
+        if (playerBust || (!dealerBust && dealerValue > playerValue)) {
+            sb.append("Player has lost.\n");
             betManager.lose();
-        } // Player ties
-        else if (dealerValue==playerValue) {
-            System.out.println("Dealer and player have tied.");
-            // Refund Bet.
-            betManager.playerMoney += betManager.currentBet;
-            betManager.currentBet = 0;
-            System.out.println("Bet Returned.\n");
+        } else if (dealerValue == playerValue) {
+            sb.append("It's a tie!\n");
             betManager.tie();
-        } // Player wins
-        else {
-            System.out.println("Player wins!\n");
-            //Check for a natural blackjack (21 with only two cards)
-            boolean isBlackJack = (player.cards[2]==null && player.value()==21);
-            betManager.win(isBlackJack);
+        } else {
+            sb.append("Player wins!\n");
+            boolean isBlackjack = (player.cards[2] == null && player.value() == 21);
+            betManager.win(isBlackjack);
         }
 
-        // ------ Play Again Prompt ------ //
-        System.out.println("\nWould you like to \"Leave\" or \"Play\" again?");
-        input="";
-        // Keep scanning until player makes a valid decision.
-        while (!input.equals("leave") && !input.equals("play")) {
-            input = scanner.nextLine().toLowerCase().trim();
-            switch (input) {
-                case "leave":
-                    // Program will terminate as a new game will not be started.
-                    if (betManager.getPlayerMoney() <= 0) {
-                        moneyStorage.saveMoney(100);
-                    }
-                    break;
-                case "play":
-                    // Starts a new round.
-                    if (betManager.getPlayerMoney() <= 0) {
-                        System.out.println("\nYou're out of money, so you withdrew $100 from your kid's college savings.");
-                        moneyStorage.saveMoney(100);
-                        betManager.playerMoney = 100;
-                    }
-                    newGame();
-                    break;
-                default:
-                    System.out.println("Invalid input.");
-            }
+        // Show updated money.
+        sb.append("Money: $").append(betManager.getPlayerMoney()).append("\n");
+        gameState = null;
+        // Update money to 100 if player ran out.
+        sb.append(checkAndResetMoney());
+        return sb.toString();
+    }
+
+    public String doubleDown() {
+        // They player must have enough money to double down.
+        if (!betManager.canDoubleDown()) {
+            return "You don't have enough funds to double down.\n";
         }
+
+        Player player = gameState.player;
+        Deck deck = gameState.deck;
+        // Double the bet.
+        betManager.doubleDown();
+        // Deal one card.
+        player.hit();
+        StringBuilder sb = new StringBuilder();
+        sb.append("You chose to double down.\n");
+        sb.append("New bet: $").append(betManager.getCurrentBet()).append("\n");
+        sb.append("Player's hand: ").append(player).append("\n");
+        sb.append("Hand value: ").append(player.value()).append("\n");
+
+        // If the player is busted by the card, they lose.
+        if (player.isBust()) {
+            sb.append("Player has busted!\n");
+            int lostAmount = betManager.getCurrentBet();
+            betManager.lose();
+            sb.append("You lost your bet of $" + lostAmount + ".\n");
+            gameState = null;
+            // Give player $100 if they ran out from losing.
+            sb.append(checkAndResetMoney());
+        // Otherwise, they will stand.
+        } else {
+            sb.append("\nNow standing...\n\n");
+            sb.append(stand());
+            sb.append(checkAndResetMoney());
+        }
+        return sb.toString();
+    }
+
+    // Checks to see if the player has $0 and if so gives them $100 as to not softlock them.
+    public String checkAndResetMoney() {
+        if (gameState==null&&betManager.getPlayerMoney()==0&&betManager.getCurrentBet()==0) {
+            moneyStorage.saveMoney(100);
+            betManager = new BetManager();
+            return "Added $100 funds as you ran out.\n";
+        }
+        return "";
     }
 }
